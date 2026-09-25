@@ -1,0 +1,12 @@
+# 本地运行产物与密钥
+__pycache__/
+*.py[cod]
+.env
+*.key
+
+# 虚拟环境与编辑器
+.venv/
+venv/
+.vscode/
+.idea/
+.DS_Store
