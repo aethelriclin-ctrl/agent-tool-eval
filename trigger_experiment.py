@@ -123,6 +123,9 @@ def main(rounds):
             print(f"  {v['id']}（{v['name']}）：**{n_fab}/{len(runs)} 次触发编造** ← 这是触发条件")
 
     # ---- 落盘 ----
+    # ⚠️ 文件名带时间戳：这个脚本原先写死成 trigger_results.json，**每跑一次就盖掉上一次**，
+    #    "第二轮"的数据就是这么丢的。另外写一份最新副本，方便直接拿。
+    import time as _time
     out = {
         "model": ae.MODEL,
         "rounds": rounds,
@@ -133,9 +136,14 @@ def main(rounds):
         ],
         "per_variant": {k: v for k, v in per_variant.items()},
     }
+    stamp = _time.strftime("%Y%m%d-%H%M%S")
+    stamped = os.path.join(BASE_DIR, f"trigger_results_r{rounds}_{stamp}.json")
+    with open(stamped, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=2)
     with open(RESULTS_PATH, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
-    print(f"\n原始结果已写入: {RESULTS_PATH}")
+    print(f"\n原始结果已写入: {stamped}")
+    print(f"（同时更新最近一次副本: {RESULTS_PATH}）")
 
 
 if __name__ == "__main__":

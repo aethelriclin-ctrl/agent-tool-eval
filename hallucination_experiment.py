@@ -142,9 +142,16 @@ def main(rounds):
         "hallucination_summary": halluc_rows,
         "round_layer_stats": round_stats,
     }
+    # ⚠️ 文件名带时间戳：与 trigger_experiment.py 同样的问题——原先写死路径、每跑必覆盖。
+    import time as _time
+    stamp = _time.strftime("%Y%m%d-%H%M%S")
+    stamped = os.path.join(BASE_DIR, f"hallucination_results_r{rounds}_{stamp}.json")
+    with open(stamped, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=2)
     with open(RESULTS_PATH, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
-    print(f"\n原始结果已写入: {RESULTS_PATH}")
+    print(f"\n原始结果已写入: {stamped}")
+    print(f"（同时更新固定路径副本: {RESULTS_PATH}）")
 
 
 if __name__ == "__main__":
