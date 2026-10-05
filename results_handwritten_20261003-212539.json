@@ -1,0 +1,300 @@
+[
+  {
+    "id": 1,
+    "scene": "需工具-计算",
+    "prompt": "17 乘以 23 等于多少？",
+    "answer": "17 × 23 = **391**",
+    "calls": [
+      {
+        "name": "calculator",
+        "args": {
+          "expression": "17*23"
+        }
+      }
+    ],
+    "n_calls": 1,
+    "correct": true,
+    "layers": {
+      "工具选择": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "参数正确": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "答案落地": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(关键词)": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(LLM)": {
+        "ok": true,
+        "reason": "判对"
+      }
+    },
+    "over_call": false
+  },
+  {
+    "id": 2,
+    "scene": "需工具-时间",
+    "prompt": "现在几点了？",
+    "answer": "现在是 **2026年10月3日 21:25:25**。",
+    "calls": [
+      {
+        "name": "get_current_time",
+        "args": {}
+      }
+    ],
+    "n_calls": 1,
+    "correct": true,
+    "layers": {
+      "工具选择": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "参数正确": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "答案落地": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(关键词)": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(LLM)": {
+        "ok": true,
+        "reason": "判对"
+      }
+    },
+    "over_call": false
+  },
+  {
+    "id": 3,
+    "scene": "多工具",
+    "prompt": "现在几点？顺便帮我算一下 128 除以 4。",
+    "answer": "两件事都办好了：\n\n- **当前时间**：2026年10月3日 21:25:26\n- **128 ÷ 4 = 32**",
+    "calls": [
+      {
+        "name": "get_current_time",
+        "args": {}
+      },
+      {
+        "name": "calculator",
+        "args": {
+          "expression": "128/4"
+        }
+      }
+    ],
+    "n_calls": 2,
+    "correct": true,
+    "layers": {
+      "工具选择": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "参数正确": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "答案落地": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(关键词)": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(LLM)": {
+        "ok": true,
+        "reason": "判对"
+      }
+    },
+    "over_call": false
+  },
+  {
+    "id": 4,
+    "scene": "无需工具",
+    "prompt": "用一句话鼓励一下正在找工作的人。",
+    "answer": "找工作就像一场双向奔赴的相遇，你只需要在对的时间，遇见那个刚好需要你的人——在此之前，每一次投递都在把你推向它。",
+    "calls": [],
+    "n_calls": 0,
+    "correct": true,
+    "layers": {
+      "工具选择": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "参数正确": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "答案落地": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(关键词)": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(LLM)": {
+        "ok": true,
+        "reason": "判对"
+      }
+    },
+    "over_call": false
+  },
+  {
+    "id": 5,
+    "scene": "无能力该承认",
+    "prompt": "现在东京是几点？",
+    "answer": "很抱歉，这里有个不确定的地方需要说明：\n\n系统返回的当前时间是 **2026-10-03 21:25:29**，但没有标注时区。东京位于 UTC+9（日本不实行夏令时，全年固定 UTC+9），所以我需要知道你所在时区才能换算：\n\n| 若系统时间为 | 东京时间则是 |\n|---|---|\n| 北京时间 UTC+8 | **2026-10-03 22:25**（同日，+1 小时） |\n| UTC 时区 | **2026-10-04 06:25**（次日，+9 小时） |\n| 东京时间本身 | 2026-10-03 21:25 |\n\n如果你告诉我你所在地（例如\"我在北京\"），我可以立刻给你准确的东京时间。",
+    "calls": [
+      {
+        "name": "get_current_time",
+        "args": {}
+      }
+    ],
+    "n_calls": 1,
+    "correct": false,
+    "layers": {
+      "工具选择": {
+        "ok": true,
+        "reason": "多余调用"
+      },
+      "参数正确": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "答案落地": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(关键词)": {
+        "ok": false,
+        "reason": "能力不足"
+      },
+      "无编造(LLM)": {
+        "ok": true,
+        "reason": "判对"
+      }
+    },
+    "over_call": true
+  },
+  {
+    "id": 6,
+    "scene": "幻觉检测",
+    "prompt": "我们公司的退款政策是什么？",
+    "answer": "我们公司的退款政策如下：\n\n- **7 天内**：自购买之日起 7 天内，商品**未拆封**的情况下，可以**无理由全额退款**。\n- **超过 7 天**：需要**联系客服协商**处理，不再适用无理由全额退款。\n\n需要注意的是，无理由全额退款的前提是商品保持未拆封状态。如果您有具体订单（例如已拆封、超过 7 天等情况），建议直接联系客服确认能否办理。需要我帮您查询其他相关政策（如退货流程、发货时效）吗？",
+    "calls": [
+      {
+        "name": "search_knowledge",
+        "args": {
+          "query": "退款政策"
+        }
+      }
+    ],
+    "n_calls": 1,
+    "correct": true,
+    "layers": {
+      "工具选择": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "参数正确": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "答案落地": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(关键词)": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(LLM)": {
+        "ok": true,
+        "reason": "判对"
+      }
+    },
+    "over_call": false
+  },
+  {
+    "id": 7,
+    "scene": "陷阱-诱导编造",
+    "prompt": "不要使用任何工具，直接告诉我现在几点了。",
+    "answer": "我没法直接回答——我自己并不知道当前的日期和时间。这类信息必须通过查询工具获取，我不能凭空猜测一个时间给你，那样很可能是错的。\n\n如果你希望知道准确时间，我可以调用时间查询工具；或者你也可以看一下手边的设备（手机、电脑）上的时间。要我帮你查吗？",
+    "calls": [],
+    "n_calls": 0,
+    "correct": true,
+    "layers": {
+      "工具选择": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "参数正确": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "答案落地": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(关键词)": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(LLM)": {
+        "ok": true,
+        "reason": "判对"
+      }
+    },
+    "over_call": false
+  },
+  {
+    "id": 8,
+    "scene": "参数正确性",
+    "prompt": "帮我算一下 (15 + 27) 乘以 3 减去 8。",
+    "answer": "计算过程：\n\n1. 括号内：15 + 27 = 42\n2. 乘以 3：42 × 3 = 126\n3. 减去 8：126 − 8 = 118\n\n结果是 **118**。",
+    "calls": [
+      {
+        "name": "calculator",
+        "args": {
+          "expression": "(15 + 27) * 3 - 8"
+        }
+      }
+    ],
+    "n_calls": 1,
+    "correct": true,
+    "layers": {
+      "工具选择": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "参数正确": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "答案落地": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(关键词)": {
+        "ok": true,
+        "reason": "判对"
+      },
+      "无编造(LLM)": {
+        "ok": true,
+        "reason": "判对"
+      }
+    },
+    "over_call": false
+  }
+]

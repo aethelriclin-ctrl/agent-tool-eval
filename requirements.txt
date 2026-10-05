@@ -1,0 +1,7 @@
+# 直接依赖（版本与本地验证环境一致：Python 3.14）
+# 手写版只需要 openai；下面四个是框架版（LangGraph）需要的。
+openai==3.14.0
+langgraph==1.2.12
+langchain==1.4.3
+langchain-core==1.6.6
+langchain-openai==1.6.7

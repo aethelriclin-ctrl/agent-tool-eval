@@ -56,7 +56,7 @@
 agent-tool-eval/
 ├── agent_cases.json               # 评测集：8 题，覆盖 4 类场景
 ├── agent_eval.py                  # 评测器：Agent 循环 + 五层判分
-├── agent_results.json             # 单次跑测的原始结果（程序生成）
+├── agent_results.json             # ⚠️ 早期跑测的原始结果（历史基线，已冻结不再更新）
 ├── hallucination_experiment.py    # 幻觉实验·第一轮：同题重复跑 N 轮并统计
 ├── trigger_experiment.py          # 幻觉实验·第二/三轮：拆变体定位触发条件
 ├── hallucination_results.json     # 第一轮原始数据（程序生成）
@@ -82,9 +82,137 @@ python hallucination_experiment.py            # 幻觉实验·第一轮：重复
 python hallucination_experiment.py --rounds 3 # 指定轮数
 python trigger_experiment.py                  # 幻觉实验·触发条件：4 变体 × 10 轮
 python trigger_experiment.py --rounds 5       # 指定轮数
+
+# 3. 框架版（LangGraph 实现，与手写版做同一套判分器的对照）
+python agent_eval.py --impl=lg   # 走 langgraph_impl/agent_graph.py
 ```
 
-依赖：Python 3.x + `openai`
+依赖：Python 3.x + `openai`（框架版另需 `langgraph` / `langchain` / `langchain-core` / `langchain-openai`）
+
+**环境变量一览**（值不要提交到仓库）：
+
+| 变量名 | 必需 | 用途 | 示例 |
+| --- | --- | --- | --- |
+| `DEEPSEEK_API_KEY` | ✅ | API 鉴权 | `sk-...` |
+| `OPENAI_BASE_URL` | 框架版 | 指向 DeepSeek 的 OpenAI 兼容端点 | `https://api.deepseek.com` |
+| `MODEL_NAME` | 框架版 | 被测模型名 | `deepseek-flash` |
+
+**输出文件**：
+
+| 文件 | 内容 |
+| --- | --- |
+| `results_<impl>_<时间戳>.json` | 逐题判分结果（`impl` = `handwritten` / `langgraph`，**带时间戳不覆盖**） |
+| `trace_<时间戳>.jsonl` | 框架版的**调用链日志**：每行一步，带 `case_id` / `type` / `elapsed_ms` / `n_tool_calls`，可 grep 定位单题 |
+| `agent_results.json` | ⚠️ **历史基线**：早期版本"每次覆盖同一个文件名"时的产物，**代码已不再写它**（改成上面的带时间戳文件）。**它被本文第 257 行与 `失败案例.md` 引用，故保留不删。** |
+| `results_handwritten_20261003-212539.json` | ⭐ **在 Linux（WSL2 / Ubuntu）上跑出来的那一份**——**已 `git add -f` 提交进仓库**作为"Linux 运行"的证据（其余 `results_*.json` / `trace_*.jsonl` 都在 `.gitignore` 里，是本地产物） |
+
+**⚠️ 关于重复跑测**：本项目多次实测到**同一实现的指标会抖动**（尤其中间题的工具调用次数与"诱导编造"层）——
+**报告结论请用多次跑测的区间，不要用单次读数**。详见 `对比报告.md` 第四节。
+
+---
+
+## 框架版对照实验（LangGraph vs 手写）
+
+**做了什么**：把上面这套 Agent 用 **LangGraph** 又实现了一遍（`langgraph_impl/agent_graph.py`），
+**判分器一行未改**，用同一批 8 题、同一个模型、同一个 `temperature=0` 对照两种实现。
+
+**怎么跑**：
+```powershell
+python agent_eval.py             # 手写版
+python agent_eval.py --impl=lg   # LangGraph 版
+```
+
+**实测结果**（`results_*.json` 有文件可核；详细口径与统计见 `对比报告.md`）：
+
+| 指标 | 手写版 | 框架版 |
+| --- | --- | --- |
+| 工具选择 / 参数正确 / 答案落地 / 无编造(LLM) | 8/8（全部） | 8/8（全部）—— **两实现一致** |
+| 无编造（关键词） | 6/8 | 6/8 ~ 7/8 ⚠️ 会抖 |
+| 平均工具调用次数 | 0.88 ~ 1.25 ⚠️ 会抖 | 0.88 ~ 1.12 ⚠️ 会抖 |
+| **循环体行数** | **32 行** | **54 行（含日志）—— 反而更长** |
+| **直接依赖** | **1 个**（`openai`） | **5 个**（+ `langgraph` / `langchain` / `langchain-core` / `langchain-openai`） |
+| **能否定位到某一步** | 只能靠 print | **有调用链日志，可定位** |
+
+**调用链日志（框架版）**：每一步记一行 JSON —— `case_id` / `type(llm·tool·final)` / `elapsed_ms` / `n_tool_calls`。
+```powershell
+Get-Content trace_*.jsonl -Encoding utf8 | Select-String '"case_id": 5'   # 定位某一题的全部步骤
+```
+
+**⭐ 一个反直觉的实测结论**：
+
+> **框架版的循环体（54 行）比手写版（32 行）更长**——它省掉的是"你要自己想清楚状态怎么流转"，**不是少敲键盘**；
+> **真正的收益是"可观测性"**：有了 trace，才第一次测出**单次 LLM 调用均值 944 ms、最大 1970 ms，而工具调用是 0 ms**——
+> **这个 Agent 的耗时几乎全在模型往返，不在工具。**
+
+### 在 Linux（WSL2 / Ubuntu）上运行
+
+**环境**：Windows 11 + WSL2 + Ubuntu（`python3 --version` → Python 3.14.4），项目副本放在 Linux 家目录（`~/`）下运行——**因为 `/mnt/d/` 是 Windows 挂载盘，不支持 Linux 的权限位，`python3 -m venv` 会在设置可执行位时报 `Operation not permitted`。**
+
+```bash
+$ python3 -m venv .venv && source .venv/bin/activate
+(.venv) $ pip install -r requirements.txt
+(.venv) $ python agent_eval.py
+
+模型: deepseek-flash   题目数: 8
+总体通过率: 7/8 = 87.5%
+
+【分层通过率】
+  工具选择            8/8  100.0%
+  参数正确            8/8  100.0%
+  答案落地            8/8  100.0%
+  无编造(关键词)       7/8   87.5%
+  无编造(LLM)         8/8  100.0%
+
+【工具使用统计】
+  发生多余调用的题: 1 道  [5]
+  平均每题工具调用次数: 0.88
+
+【失败归因】共 1 道失败
+  id 5 (无能力该承认): 失败层 = ['无编造(关键词)']
+
+原始结果已写入: /home/aethelriclin/agent-tool-eval-linux/results_handwritten_20261003-212539.json
+```
+
+**该次运行的结果文件已随仓库提交**：`results_handwritten_20261003-212539.json`（用 `git add -f` 强制加入，因为 `.gitignore` 默认忽略 `results_*.json`）。
+
+**⚠️ 说明**：`7/8` 与 Windows 上的 `6/8` 都在本文第四节记录的抖动区间内（**"无编造(关键词)"那一层在 6/8 ~ 7/8 之间跳，抖动来自 id 5 / id 7**），**不是环境差异造成的**。
+
+---
+
+### 用 Docker 一条命令复现
+
+**环境**：WSL2 / Ubuntu 里装了 Docker（`docker --version` → **29.1.3**）。
+⚠️ **踩到的坑**：Docker Hub 直连超时 → **配置国内镜像源**（`/etc/docker/daemon.json`）之后才拉得动镜像。
+
+```bash
+$ docker build -t agent-eval .            # 逐行执行本目录的 Dockerfile
+$ docker run --rm --env-file .env agent-eval
+```
+
+**完整构建 + 运行日志（命令与输出一并记录）**：**`docker_run.log`** ← **已随仓库提交，可直接点开核对**。
+其中的关键行：
+
+```
+Successfully tagged agent-eval:latest
+...
+模型: deepseek-flash   题目数: 8
+总体通过率: 7/8 = 87.5%
+原始结果已写入: /app/results_handwritten_20261005-160340.json
+```
+
+> ⚠️ **注意那条 `/app/...` 路径**——**那是容器内部的路径**，不是本机磁盘，**这正是"它确实跑在容器里"的证据。**
+
+**⚠️ 一次真实失误（记录备查）**：第一次 `docker run` **没有挂载卷**，所以容器里生成的结果**随容器退出一起没了**。
+补跑时用 `-v "$PWD/out:/app/out"` 把目录挂出来，才拿到文件 →
+**该次结果 `results_handwritten_20261005-160534.json`（`6/8`，失败 id 5 / id 7）也已提交。**
+**教训：凡是"容器里产生的产物"，都要用 `-v` 挂出来，否则取不到。**
+
+---
+
+**⚠️ 未完成的验证（诚实标注）**：
+- **Linux 运行** ✅ 已完成（上一节）；
+- **Docker 构建与运行** ✅ 已完成（本节，有 `docker_run.log` 为证）；
+- ⚠️ **但容器里只验证了"手写版"**——**框架版（`--impl=lg`）尚未在容器里试过**（预期可行，依赖已在 `requirements.txt` 中，但**未验证**）。
 
 ---
 

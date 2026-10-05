@@ -4,9 +4,20 @@ __pycache__/
 .env
 *.key
 
+# 跑测产物（每次运行都会新生成；需要留档时用 git add -f 强制加入）
+results_*.json
+trace_*.jsonl
+
 # 虚拟环境与编辑器
 .venv/
 venv/
 .vscode/
 .idea/
 .DS_Store
+
+# 其他语言的会话历史（本机出现过空的 .Rhistory）
+.Rhistory
+.RData
+
+# 本地工作笔记（过程记录、内部清单等，仅留本机，不进仓库）
+_local_notes/

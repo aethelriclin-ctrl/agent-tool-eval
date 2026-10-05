@@ -19,6 +19,9 @@ client = OpenAI(api_key=API_KEY, base_url="https://api.deepseek.com")
 MODEL = "deepseek-flash"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CASES_PATH = os.path.join(BASE_DIR, "agent_cases.json")
+# ⚠️ 历史遗留：早期版本把结果写死到这个文件名，每跑一次就覆盖一次（丢过数据）。
+#    现在 run() 改成写 results_<impl>_<时间戳>.json，本常量已不再被使用；
+#    保留它是因为 README 与 失败案例.md 引用了这个文件里的历史数据（n_calls=1.25 那份基线）。
 RESULTS_PATH = os.path.join(BASE_DIR, "agent_results.json")
 
 
@@ -267,7 +270,11 @@ def run(limit=None):
     results = []
     for c in cases:
         print(f"\n[{c['id']}/{len(cases)}] ({c['scene']}) {c['prompt'][:40]}...")
-        answer, calls = run_agent(c["prompt"])
+        if "--impl=lg" in sys.argv:
+            from langgraph_impl.agent_graph import run_agent_lg
+            answer, calls = run_agent_lg(c["prompt"], case_id=c["id"])
+        else:
+            answer, calls = run_agent(c["prompt"])
 
         for call in calls:
             print(f"  调用: {call['name']}({call['args']}) → {call['result'][:40]}")
@@ -320,9 +327,14 @@ def run(limit=None):
             bad = [k for k, v in r["layers"].items() if not v["ok"]]
             print(f"  id {r['id']} ({r['scene']}): 失败层 = {bad}")
 
-    with open(RESULTS_PATH, "w", encoding="utf-8") as f:
+    # ---- 保存：文件名带「实现方式 + 时间戳」，绝不互相覆盖 ----
+    # impl: 本次用的是手写版还是 LangGraph 版；stamp: 精确到秒的时间戳
+    impl = "langgraph" if "--impl=lg" in sys.argv else "handwritten"
+    stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    out_path = os.path.join(BASE_DIR, f"results_{impl}_{stamp}.json")
+    with open(out_path, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
-    print(f"\n原始结果已写入: {RESULTS_PATH}")
+    print(f"\n原始结果已写入: {out_path}")
 
 
 if __name__ == "__main__":

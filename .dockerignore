@@ -1,0 +1,9 @@
+# 构建镜像时排除这些（减小上下文、避免把本地产物与密钥带进镜像）
+.git/
+.env
+__pycache__/
+*.py[cod]
+results_*.json
+trace_*.jsonl
+*.md
+lg_demo.py
