@@ -209,10 +209,24 @@ Successfully tagged agent-eval:latest
 
 ---
 
-**⚠️ 未完成的验证（诚实标注）**：
+**框架版（`--impl=lg`）同样在容器里跑过**：
+
+```bash
+$ docker run --rm --env-file .env -v "$PWD/out:/app/out" agent-eval \
+    sh -c "python agent_eval.py --impl=lg; cp /app/results_*.json /app/out/"
+模型: deepseek-flash   题目数: 8
+总体通过率: 6/8 = 75.0%
+原始结果已写入: /app/results_langgraph_20261006-140637.json
+```
+
+**日志与结果文件均已提交**：`docker_run_lg.log` · `results_langgraph_20261006-140637.json`（`6/8`）。
+
+---
+
+**验证状态（诚实标注）**：
 - **Linux 运行** ✅ 已完成（上一节）；
-- **Docker 构建与运行** ✅ 已完成（本节，有 `docker_run.log` 为证）；
-- ⚠️ **但容器里只验证了"手写版"**——**框架版（`--impl=lg`）尚未在容器里试过**（预期可行，依赖已在 `requirements.txt` 中，但**未验证**）。
+- **Docker 构建与运行** ✅ 已完成（本节，有 `docker_run.log` / `docker_run_lg.log` 为证）；
+- **两种实现（手写版 / 框架版）都在容器里跑过** ✅ ——**即"Windows / Linux / 容器"三种环境 × 两种实现，全部覆盖。**
 
 ---
 
